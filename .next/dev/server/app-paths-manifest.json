@@ -1,0 +1,16 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/dashboard/budget/page": "app/dashboard/budget/page.js",
+  "/dashboard/calendar/page": "app/dashboard/calendar/page.js",
+  "/dashboard/documents/page": "app/dashboard/documents/page.js",
+  "/dashboard/forum/[id]/page": "app/dashboard/forum/[id]/page.js",
+  "/dashboard/forum/page": "app/dashboard/forum/page.js",
+  "/dashboard/opportunities/page": "app/dashboard/opportunities/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/passport/page": "app/dashboard/passport/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js",
+  "/dashboard/visa/page": "app/dashboard/visa/page.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
+  "/register/page": "app/register/page.js"
+}

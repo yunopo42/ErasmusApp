@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/ms%C4%B1/Desktop/ErasmusApp/src/components/ThemeProvider.tsx"],"sourcesContent":["\"use client\";\r\n\r\nimport { ThemeProvider as NextThemesProvider } from \"next-themes\";\r\n\r\nexport function ThemeProvider({ children }: { children: React.ReactNode }) {\r\n    return (\r\n        <NextThemesProvider attribute=\"data-theme\" defaultTheme=\"system\" enableSystem>\r\n            {children}\r\n        </NextThemesProvider>\r\n    );\r\n}\r\n"],"names":[],"mappings":";;;;;AAEA;AAFA;;;AAIO,SAAS,cAAc,EAAE,QAAQ,EAAiC;IACrE,qBACI,6LAAC,oKAAkB;QAAC,WAAU;QAAa,cAAa;QAAS,YAAY;kBACxE;;;;;;AAGb;KANgB"}}]
+}

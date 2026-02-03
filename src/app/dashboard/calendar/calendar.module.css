@@ -1,0 +1,125 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    height: calc(100vh - 8rem);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.monthTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.navBtn {
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    color: var(--foreground);
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.navBtn:hover {
+    background-color: var(--secondary);
+}
+
+/* Calendar Grid */
+.calendarGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background-color: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    flex: 1;
+}
+
+.dayName {
+    background-color: var(--secondary);
+    padding: 1rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--secondary-foreground);
+}
+
+.dayCell {
+    background-color: var(--background);
+    min-height: 100px;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.dayCell:hover {
+    background-color: var(--secondary);
+}
+
+.dayNumber {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.today .dayNumber {
+    background-color: var(--primary);
+    color: white;
+}
+
+.otherMonth {
+    opacity: 0.4;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Event Chip */
+.eventChip {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.type_academic {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.type_travel {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.type_social {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.type_deadline {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Dark mode adjustments done via CSS variables automatically */
