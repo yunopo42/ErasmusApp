@@ -35,28 +35,28 @@ ErasmusHub is a modern web application designed to help Erasmus students manage 
 ## 📸 Screenshots
 
 ### Dashboard
-![Dashboard](/C:/Users/msı/.gemini/antigravity/brain/af094961-2fae-4109-b125-dc42c2b6dbb5/dashboard.png)
+![Dashboard](public/screenshots/dashboard.png)
 
 ### Opportunities
-![Opportunities](/C:/Users/msı/.gemini/antigravity/brain/af094961-2fae-4109-b125-dc42c2b6dbb5/opportunities.png)
+![Opportunities](public/screenshots/opportunities.png)
 
 ### Visa Checklist
-![Visa](/C:/Users/msı/.gemini/antigravity/brain/af094961-2fae-4109-b125-dc42c2b6dbb5/visa.png)
+![Visa](public/screenshots/visa.png)
 
 ### Documents
-![Documents](/C:/Users/msı/.gemini/antigravity/brain/af094961-2fae-4109-b125-dc42c2b6dbb5/documents.png)
+![Documents](public/screenshots/documents.png)
 
 ### Budget Tracker
-![Budget](/C:/Users/msı/.gemini/antigravity/brain/af094961-2fae-4109-b125-dc42c2b6dbb5/budget.png)
+![Budget](public/screenshots/budget.png)
 
 ### Calendar
-![Calendar](/C:/Users/msı/.gemini/antigravity/brain/af094961-2fae-4109-b125-dc42c2b6dbb5/calendar.png)
+![Calendar](public/screenshots/calendar.png)
 
 ### Forum
-![Forum](/C:/Users/msı/.gemini/antigravity/brain/af094961-2fae-4109-b125-dc42c2b6dbb5/forum.png)
+![Forum](public/screenshots/forum.png)
 
 ### Settings
-![Settings](/C:/Users/msı/.gemini/antigravity/brain/af094961-2fae-4109-b125-dc42c2b6dbb5/settings.png)
+![Settings](public/screenshots/settings.png)
 
 ---
 
