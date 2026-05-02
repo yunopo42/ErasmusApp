@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase";
 import styles from "./opportunities.module.css";
 import Link from "next/link";
 
@@ -9,7 +8,7 @@ type Opportunity = {
     id: string;
     title: string;
     organization: string;
-    type: string;
+    type: 'internship' | 'project' | 'other';
     location: string;
     salary?: string;
     deadline?: string;
@@ -17,7 +16,6 @@ type Opportunity = {
 };
 
 export default function OpportunitiesPage() {
-    const supabase = createClient();
     const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
     const [userProfile, setUserProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -28,23 +26,18 @@ export default function OpportunitiesPage() {
 
     const fetchData = async () => {
         // 1. Fetch User Profile for personalized links
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
+        try {
+            const profileRes = await fetch('/api/profile');
+            const profile = await profileRes.json();
             setUserProfile(profile);
+
+            // 2. Fetch Featured Opportunities
+            const oppsRes = await fetch('/api/opportunities');
+            const opps = await oppsRes.json();
+            if (Array.isArray(opps)) setOpportunities(opps);
+        } catch (error) {
+            console.error("Error fetching data:", error);
         }
-
-        // 2. Fetch Featured Opportunities
-        const { data: opps } = await supabase
-            .from('opportunities')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (opps) setOpportunities(opps as any);
         setLoading(false);
     };
 

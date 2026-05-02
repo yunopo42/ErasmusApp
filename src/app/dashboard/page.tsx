@@ -1,57 +1,17 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase"; // Server Client needed for server component
-import { redirect } from "next/navigation";
+import db, { MOCK_USER_ID } from "@/lib/db";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 
 export default async function DashboardPage() {
-    // Create Server Client
-    const cookieStore = await cookies();
+    // Mock Auth: In a real app, you'd use NextAuth with SQLite
+    const user = { id: MOCK_USER_ID, email: 'student@example.com' };
 
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                getAll() {
-                    return cookieStore.getAll()
-                },
-                setAll(cookiesToSet) {
-                    try {
-                        cookiesToSet.forEach(({ name, value, options }) =>
-                            cookieStore.set(name, value, options)
-                        )
-                    } catch {
-                        // The `setAll` method was called from a Server Component.
-                        // This can be ignored if you have middleware refreshing
-                        // user sessions.
-                    }
-                },
-            },
-        }
-    );
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect('/login');
-    }
-
-    // PARALLEL DATA FETCHING
-    const [
-        { data: profile },
-        { data: transactions },
-        { data: checklistItems },
-        { data: trendingPosts },
-        { data: incompleteTasks }
-    ] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
-        supabase.from('budget_entries').select('amount, type').eq('user_id', user.id),
-        supabase.from('checklist_items').select('is_completed').eq('user_id', user.id),
-        supabase.from('posts').select('id, title, content, category').order('likes_count', { ascending: false }).limit(1), // Most liked post
-        supabase.from('checklist_items').select('id, title').eq('user_id', user.id).eq('is_completed', false).limit(3)
-    ]);
+    // FETCH DATA FROM SQLITE
+    const profile = db.prepare('SELECT * FROM profiles WHERE id = ?').get(user.id) as any;
+    const transactions = db.prepare('SELECT amount, type FROM budget_entries WHERE user_id = ?').all(user.id) as any[];
+    const checklistItems = db.prepare('SELECT is_completed FROM checklist_items WHERE user_id = ?').all(user.id) as any[];
+    const trendingPosts = db.prepare('SELECT id, title, content, category FROM posts ORDER BY likes_count DESC LIMIT 1').all() as any[];
+    const incompleteTasks = db.prepare('SELECT id, title FROM checklist_items WHERE user_id = ? AND is_completed = 0 LIMIT 3').all(user.id) as any[];
 
     // Budget Calculations
     let remainingBudget = 0;
@@ -80,7 +40,7 @@ export default async function DashboardPage() {
     return (
         <div>
             {/* Show Onboarding Modal if needed */}
-            {showOnboarding && <OnboardingModal user={user} />}
+            {showOnboarding && <OnboardingModal user={user as any} />}
 
             {/* Welcome Section */}
             <div style={{ marginBottom: '2rem' }}>
@@ -143,7 +103,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Main Sections */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repea(auto-fit, minmax(300px, 1fr))', gap: '2rem' }} className="responsive-grid">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
 
                 {/* Left Col: Next Actions */}
                 <div style={{ flex: 2 }}>
@@ -151,7 +111,7 @@ export default async function DashboardPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {/* Dynamic Incomplete Tasks */}
                         {incompleteTasks && incompleteTasks.length > 0 ? (
-                            incompleteTasks.map(task => (
+                            incompleteTasks.map((task: any) => (
                                 <div key={task.id} style={{
                                     padding: '1rem',
                                     backgroundColor: 'var(--background)',

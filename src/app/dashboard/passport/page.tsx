@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase";
 import styles from "./passport.module.css";
 import stylesModal from "@/components/onboarding/onboarding.module.css"; // Reuse modal styles
 
@@ -15,7 +14,6 @@ type VisitedPlace = {
 };
 
 export default function PassportPage() {
-    const supabase = createClient();
     const [places, setPlaces] = useState<VisitedPlace[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,16 +36,13 @@ export default function PassportPage() {
     }, []);
 
     const fetchPlaces = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data } = await supabase
-            .from('visited_places')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('visit_date', { ascending: false });
-
-        if (data) setPlaces(data as any);
+        try {
+            const res = await fetch('/api/passport');
+            const data = await res.json();
+            if (Array.isArray(data)) setPlaces(data);
+        } catch (error) {
+            console.error("Error fetching places:", error);
+        }
         setLoading(false);
     };
 
@@ -74,78 +69,43 @@ export default function PassportPage() {
     const handleDelete = async (id: string) => {
         if (!confirm("Are you sure you want to delete this stamp?")) return;
 
-        const { error } = await supabase.from('visited_places').delete().eq('id', id);
-        if (error) alert("Error deleting: " + error.message);
-        else fetchPlaces();
+        try {
+            await fetch(`/api/passport?id=${id}`, { method: 'DELETE' });
+            fetchPlaces();
+        } catch (error) {
+            alert("Error deleting stamp");
+        }
     };
 
     const handleCreateOrUpdate = async () => {
         if (!newPlace.city || !newPlace.country) return;
 
         setUploading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
 
-        let photoUrl = editingId ? places.find(p => p.id === editingId)?.photo_url : null;
+        try {
+            const res = await fetch('/api/passport', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: editingId,
+                    country: newPlace.country,
+                    city: newPlace.city,
+                    visit_date: newPlace.date || null,
+                    notes: newPlace.notes,
+                    photo_url: null // Skipping photo upload for now in SQLite version
+                })
+            });
 
-        // 1. Upload Photo if selected (overwrites existing if any)
-        if (newPlace.photo) {
-            try {
-                const fileExt = newPlace.photo.name.split('.').pop();
-                const fileName = `travel-${Math.random()}.${fileExt}`;
-                const filePath = `${user.id}/${fileName}`;
-
-                const { error: uploadError } = await supabase.storage
-                    .from('travel')
-                    .upload(filePath, newPlace.photo);
-
-                if (uploadError) throw uploadError;
-
-                const { data } = supabase.storage
-                    .from('travel')
-                    .getPublicUrl(filePath);
-
-                photoUrl = data.publicUrl;
-            } catch (error: any) {
-                alert('Error uploading photo: ' + error.message);
-                setUploading(false);
-                return;
+            if (!res.ok) {
+                alert("Error saving place");
+            } else {
+                setIsModalOpen(false);
+                setNewPlace({ country: '', city: '', date: '', notes: '', photo: null });
+                setEditingId(null);
+                fetchPlaces();
             }
-        }
-
-        // 2. Insert or Update into DB
-        const payload = {
-            user_id: user.id,
-            country: newPlace.country,
-            city: newPlace.city,
-            visit_date: newPlace.date || null,
-            notes: newPlace.notes,
-            photo_url: photoUrl
-        };
-
-        let error;
-        if (editingId) {
-            // UPDATE
-            const { error: updateError } = await supabase
-                .from('visited_places')
-                .update(payload)
-                .eq('id', editingId);
-            error = updateError;
-        } else {
-            // CREATE
-            const { error: insertError } = await supabase
-                .from('visited_places')
-                .insert(payload);
-            error = insertError;
-        }
-
-        if (error) {
-            alert("Error saving place: " + error.message);
-        } else {
-            setIsModalOpen(false);
-            setNewPlace({ country: '', city: '', date: '', notes: '', photo: null });
-            setEditingId(null);
-            fetchPlaces();
+        } catch (error) {
+            alert("Error saving place");
         }
         setUploading(false);
     };

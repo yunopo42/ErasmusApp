@@ -4,12 +4,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase";
 import styles from "../auth.module.css";
 
 export default function LoginPage() {
     const router = useRouter();
-    const supabase = createClient();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -18,25 +16,10 @@ export default function LoginPage() {
         setLoading(true);
         setError(null);
 
-        const formData = new FormData(e.currentTarget);
-        const email = formData.get("email") as string;
-        const password = formData.get("password") as string;
-
-        try {
-            const { error: signInError } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
-
-            if (signInError) throw signInError;
-
-            // Successful login
+        // Mock login: Just redirect to dashboard
+        setTimeout(() => {
             router.push("/dashboard");
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+        }, 500);
     };
 
     return (

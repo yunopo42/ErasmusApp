@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase";
 import styles from "./checklist.module.css";
 import NewTaskModal from "./modal/NewTaskModal";
 
@@ -19,7 +18,6 @@ type Task = {
 };
 
 export default function ChecklistPage() {
-    const supabase = createClient();
     const [activeCategory, setActiveCategory] = useState("Documents");
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
@@ -35,47 +33,38 @@ export default function ChecklistPage() {
 
     const fetchTasks = async () => {
         setLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (user) {
-            const { data, error } = await supabase
-                .from('checklist_items')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: true });
-
-            if (data) setTasks(data);
+        try {
+            const res = await fetch('/api/visa');
+            const data = await res.json();
+            if (Array.isArray(data)) setTasks(data);
+        } catch (error) {
+            console.error("Error fetching tasks:", error);
         }
         setLoading(false);
     };
 
     const handleSaveTask = async (taskData: any) => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        try {
+            const res = await fetch('/api/visa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: taskData.title,
+                    category: taskData.category,
+                    notes: taskData.notes,
+                    due_date: taskData.due_date,
+                    priority: taskData.priority
+                })
+            });
 
-        // If editing (not implemented in this step fully, but simpler for now)
-        // Let's assume create only for now or simple logic
-
-        const newTask = {
-            title: taskData.title,
-            category: taskData.category,
-            notes: taskData.notes,
-            due_date: taskData.due_date,
-            priority: taskData.priority,
-            user_id: user.id
-        };
-
-        const { data, error } = await supabase
-            .from('checklist_items')
-            .insert(newTask)
-            .select()
-            .single();
-
-        if (error) {
+            if (res.ok) {
+                const data = await res.json();
+                setTasks([...tasks, data]);
+                setIsModalOpen(false);
+            }
+        } catch (error) {
             console.error(error);
             alert("Error saving task");
-        } else {
-            setTasks([...tasks, data]);
         }
     };
 
@@ -83,12 +72,15 @@ export default function ChecklistPage() {
         // Optimistic Update
         setTasks(tasks.map(t => t.id === taskId ? { ...t, is_completed: !currentStatus } : t));
 
-        const { error } = await supabase
-            .from('checklist_items')
-            .update({ is_completed: !currentStatus })
-            .eq('id', taskId);
+        try {
+            const res = await fetch('/api/visa', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: taskId, is_completed: !currentStatus })
+            });
 
-        if (error) {
+            if (!res.ok) throw new Error('Failed to update task');
+        } catch (error) {
             console.error(error);
             fetchTasks(); // Revert
         }

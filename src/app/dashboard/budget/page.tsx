@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase";
 import styles from "./budget.module.css";
 import stylesModal from "@/components/onboarding/onboarding.module.css"; // Reusing modal styles
 
@@ -17,7 +16,6 @@ type Transaction = {
 
 
 export default function BudgetPage() {
-    const supabase = createClient();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,18 +38,15 @@ export default function BudgetPage() {
 
     const fetchTransactions = async () => {
         setLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            const { data } = await supabase
-                .from('budget_entries')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false });
-
-            if (data) {
-                setTransactions(data as any);
-                calculateStats(data as any);
+        try {
+            const res = await fetch('/api/budget');
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                setTransactions(data);
+                calculateStats(data);
             }
+        } catch (error) {
+            console.error("Error fetching transactions:", error);
         }
         setLoading(false);
     };
@@ -59,48 +54,55 @@ export default function BudgetPage() {
     const calculateStats = (data: Transaction[]) => {
         const income = data
             .filter(t => t.type === 'income')
-            .reduce((sum, t) => sum + t.amount, 0);
+            .reduce((sum, t) => sum + Number(t.amount), 0);
 
         const expense = data
             .filter(t => t.type === 'expense')
-            .reduce((sum, t) => sum + t.amount, 0);
+            .reduce((sum, t) => sum + Number(t.amount), 0);
 
         setTotalIncome(income);
         setTotalExpense(expense);
     };
 
     const handleAddTransaction = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
         if (!newItem.amount || !newItem.description) return;
 
         const amountValue = parseFloat(newItem.amount);
 
-        const { error } = await supabase
-            .from('budget_entries')
-            .insert({
-                user_id: user.id,
-                amount: amountValue,
-                title: newItem.description, // Mapping description to title as per db schema
-                type: newItem.type,
-                category: newItem.category
+        try {
+            const res = await fetch('/api/budget', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: amountValue,
+                    title: newItem.description,
+                    type: newItem.type,
+                    category: newItem.category
+                })
             });
 
-        if (error) {
-            alert("Error adding transaction: " + error.message);
-        } else {
-            setIsModalOpen(false);
-            setNewItem({ amount: '', description: '', type: 'expense', category: 'Food' });
-            fetchTransactions();
+            if (!res.ok) {
+                const error = await res.json();
+                alert("Error adding transaction: " + error.error);
+            } else {
+                setIsModalOpen(false);
+                setNewItem({ amount: '', description: '', type: 'expense', category: 'Food' });
+                fetchTransactions();
+            }
+        } catch (error) {
+            alert("Error adding transaction");
         }
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm("Delete this transaction?")) return;
 
-        await supabase.from('budget_entries').delete().eq('id', id);
-        fetchTransactions();
+        try {
+            await fetch(`/api/budget?id=${id}`, { method: 'DELETE' });
+            fetchTransactions();
+        } catch (error) {
+            alert("Error deleting transaction");
+        }
     };
 
     return (

@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase";
 import styles from "../auth.module.css";
 
 export default function RegisterPage() {
     const router = useRouter();
-    const supabase = createClient();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -17,31 +15,10 @@ export default function RegisterPage() {
         setLoading(true);
         setError(null);
 
-        const formData = new FormData(e.currentTarget);
-        const email = formData.get("email") as string;
-        const password = formData.get("password") as string;
-        const fullName = formData.get("name") as string;
-
-        try {
-            const { error: signUpError } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: fullName,
-                    },
-                },
-            });
-
-            if (signUpError) throw signUpError;
-
-            // Successful signup
+        // Mock signup: Just redirect to dashboard
+        setTimeout(() => {
             router.push("/dashboard?welcome=true");
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+        }, 500);
     };
 
     return (

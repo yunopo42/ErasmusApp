@@ -5,7 +5,6 @@ import Link from "next/link";
 import styles from "./dashboard.module.css";
 import React, { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { createClient } from "@/lib/supabase";
 
 // Icons (Simple SVGs for now to adhere to Vanilla request, 
 // usually we'd use lucide-react but I'll embed to avoid dep issues for now 
@@ -38,61 +37,24 @@ export default function DashboardLayout({
     const [userName, setUserName] = useState("Student");
     const [userAvatar, setUserAvatar] = useState<string | null>(null);
     const router = useRouter();
-    const supabase = createClient();
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        // Mock logout
         router.push('/login');
     };
 
     useEffect(() => {
         const fetchUserData = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            try {
+                const res = await fetch('/api/profile');
+                const profile = await res.json();
 
-            // Fetch Profile Name & Avatar
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('full_name, avatar_url')
-                .eq('id', user.id)
-                .single();
-
-            if (profile) {
-                if (profile.full_name) setUserName(profile.full_name);
-                if (profile.avatar_url) {
-                    // Check if it's a full URL (e.g. OAuth) or a path
-                    if (profile.avatar_url.startsWith('http')) {
-                        setUserAvatar(profile.avatar_url);
-                    } else {
-                        // Assume stored in 'avatars' bucket
-                        const { data: { publicUrl } } = supabase
-                            .storage
-                            .from('avatars')
-                            .getPublicUrl(profile.avatar_url);
-                        setUserAvatar(publicUrl);
-                    }
+                if (profile) {
+                    if (profile.full_name) setUserName(profile.full_name);
+                    if (profile.avatar_url) setUserAvatar(profile.avatar_url);
                 }
-            }
-
-            const { data: incompleteTasks } = await supabase
-                .from('checklist_items')
-                .select('title')
-                .eq('user_id', user.id)
-                .eq('is_completed', false)
-                .limit(3);
-
-            if (incompleteTasks && incompleteTasks.length > 0) {
-                const missingTitles = incompleteTasks.map(t => t.title).join(', ');
-                const alertMessage = `Missing for Visa: ${missingTitles}${incompleteTasks.length >= 3 ? '...' : ''}`;
-
-                setNotifications(prev => {
-                    // Prevent duplicate alert
-                    if (prev.some(n => n.id === 'smart-alert')) return prev;
-                    return [
-                        { id: 'smart-alert', message: alertMessage, time: 'Action Required ⚠️', isRead: false },
-                        ...prev
-                    ];
-                });
+            } catch (error) {
+                console.error("Error fetching user data:", error);
             }
         };
         fetchUserData();

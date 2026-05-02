@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import styles from "./settings.module.css";
 
 const COUNTRIES = ['Poland', 'Italy', 'Spain', 'Germany', 'France', 'Portugal', 'Czech Republic', 'Netherlands'];
 
 export default function SettingsPage() {
-    const supabase = createClient();
     const router = useRouter();
 
     const [loading, setLoading] = useState(true);
@@ -29,102 +27,50 @@ export default function SettingsPage() {
     }, []);
 
     const fetchProfile = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        try {
+            const res = await fetch('/api/profile');
+            const data = await res.json();
 
-        const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-        if (data) {
-            setFormData({
-                full_name: data.full_name || '',
-                target_country: data.target_country || '',
-                university: data.university || '',
-                start_date: data.start_date || '',
-                end_date: data.end_date || '',
-                avatar_url: data.avatar_url || ''
-            });
+            if (data) {
+                setFormData({
+                    full_name: data.full_name || '',
+                    target_country: data.target_country || '',
+                    university: data.university || '',
+                    start_date: data.start_date || '',
+                    end_date: data.end_date || '',
+                    avatar_url: data.avatar_url || ''
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching profile:", error);
         }
         setLoading(false);
     };
 
     const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        try {
-            setUploadingAvatar(true);
-            if (!event.target.files || event.target.files.length === 0) {
-                throw new Error('You must select an image to upload.');
-            }
-
-            const file = event.target.files[0];
-            const fileExt = file.name.split('.').pop();
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const fileName = `avatar-${Math.random()}.${fileExt}`;
-            const filePath = `${user.id}/${fileName}`;
-
-            // 1. Upload to Storage
-            const { error: uploadError } = await supabase.storage
-                .from('avatars')
-                .upload(filePath, file);
-
-            if (uploadError) throw uploadError;
-
-            // 2. Get Public URL
-            const { data: { publicUrl } } = supabase.storage
-                .from('avatars')
-                .getPublicUrl(filePath);
-
-            // 3. Update Profile
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ avatar_url: publicUrl, updated_at: new Date() })
-                .eq('id', user.id);
-
-            if (updateError) throw updateError;
-
-            setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
-            alert('Avatar updated!');
-            router.refresh();
-
-        } catch (error: any) {
-            alert('Error uploading avatar: ' + error.message);
-        } finally {
-            setUploadingAvatar(false);
-        }
+        alert("Avatar upload is in demo mode. Changes are not persisted to storage.");
     };
 
     const handleSave = async () => {
         setSaving(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        try {
+            const res = await fetch('/api/profile', {
+                method: 'POST', // Actually my profile API handles POST as update/upsert
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
 
-        const { error } = await supabase
-            .from('profiles')
-            .update({
-                full_name: formData.full_name,
-                target_country: formData.target_country,
-                university: formData.university,
-                start_date: formData.start_date || null,
-                end_date: formData.end_date || null,
-                updated_at: new Date()
-            })
-            .eq('id', user.id);
-
-        if (error) {
-            alert("Error updating profile: " + error.message);
-        } else {
-            alert("Profile updated successfully! ✅");
-            router.refresh();
+            if (res.ok) {
+                alert("Profile updated successfully! ✅");
+                router.refresh();
+            }
+        } catch (error) {
+            alert("Error updating profile");
         }
         setSaving(false);
     };
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
         router.push('/login');
     };
 

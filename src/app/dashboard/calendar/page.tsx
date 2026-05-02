@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase";
 import styles from "./calendar.module.css";
 import stylesModal from "@/components/onboarding/onboarding.module.css"; // Reuse modal
 
@@ -14,7 +13,6 @@ type Event = {
 };
 
 export default function CalendarPage() {
-    const supabase = createClient();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [events, setEvents] = useState<Event[]>([]);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -28,22 +26,17 @@ export default function CalendarPage() {
     }, [currentDate]); // Refetch when month changes
 
     const fetchEvents = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // Get range for current month view (simplified: fetch all for now, filter in memory)
-        // Ideally we filter by date range in SQL
-        const { data } = await supabase
-            .from('calendar_events')
-            .select('*')
-            .eq('user_id', user.id);
-
-        if (data) setEvents(data as any);
+        try {
+            const res = await fetch('/api/calendar');
+            const data = await res.json();
+            if (Array.isArray(data)) setEvents(data);
+        } catch (error) {
+            console.error("Error fetching events:", error);
+        }
     };
 
     const handleAddEvent = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || !selectedDate || !newEvent.title) return;
+        if (!selectedDate || !newEvent.title) return;
 
         // Use selected end date, or default to start date if empty
         const finalEndDate = newEvent.endDate || selectedDate;
@@ -54,22 +47,25 @@ export default function CalendarPage() {
             return;
         }
 
-        const { error } = await supabase
-            .from('calendar_events')
-            .insert({
-                user_id: user.id,
-                title: newEvent.title,
-                start_date: selectedDate,
-                end_date: finalEndDate,
-                type: newEvent.type
+        try {
+            const res = await fetch('/api/calendar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: newEvent.title,
+                    start_date: selectedDate,
+                    end_date: finalEndDate,
+                    type: newEvent.type
+                })
             });
 
-        if (error) {
-            alert("Error adding event: " + error.message);
-        } else {
-            setIsModalOpen(false);
-            setNewEvent({ title: '', type: 'academic', endDate: '' });
-            fetchEvents();
+            if (res.ok) {
+                setIsModalOpen(false);
+                setNewEvent({ title: '', type: 'academic', endDate: '' });
+                fetchEvents();
+            }
+        } catch (error) {
+            alert("Error adding event");
         }
     };
 
